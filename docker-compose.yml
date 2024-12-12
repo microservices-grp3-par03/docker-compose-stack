@@ -1,0 +1,53 @@
+# docker central
+version: "3.8"
+
+services:
+  # Service PostgreSQL
+  postgres:
+    image: postgres:14
+    container_name: database-postgres
+    networks:
+      - backend
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - central_postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+
+  # Service pgAdmin
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    networks:
+      - backend
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    
+  # Service RabbitMQ
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: rabbitmq
+    networks:
+      - backend
+    ports:
+      - "5672:5672"  # Port pour la communication avec RabbitMQ
+      - "15672:15672" # Port pour l'interface de gestion de RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+
+volumes:
+  central_postgres_data:
+    driver: local
+
+networks:
+  backend:
+    external: true
